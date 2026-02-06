@@ -1,0 +1,8 @@
+django
+django-environ
+psycopg2-binary
+supabase
+openai
+requests
+django-cors-headers
+python-dotenv
