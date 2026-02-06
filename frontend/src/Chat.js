@@ -5,8 +5,8 @@ import { createClient } from '@supabase/supabase-js';
 // 1. Paste your actual Supabase details here
 // Find these in: Project Settings -> API
 const supabase = createClient(
-  'https://ialzxgcgkzvgxjzgglkc.supabase.co', 
-  'sb_publishable_RC7ubywKk9G_vz0eiuBlPw_NwGnvuev' 
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
 );
 
 function Chat() {
