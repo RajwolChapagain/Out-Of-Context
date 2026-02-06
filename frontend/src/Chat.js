@@ -17,7 +17,7 @@ function Chat() {
   // Join the server via Django
   const joinServer = async () => {
     try {
-      const res = await axios.get('http://localhost:8000/join/');
+      const res = await axios.get('https://quantitative-advancement-provincial-belong.trycloudflare.com/');
       setGameData(res.data);
     } catch (err) {
       alert("Backend not reached. Is Docker running?");
