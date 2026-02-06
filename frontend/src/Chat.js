@@ -84,68 +84,155 @@ function Chat() {
   };
 
   if (!gameData) {
-    return (
-      <div style={{ textAlign: 'center', marginTop: '50px' }}>
-        <button onClick={joinServer} style={{ padding: '10px 20px', fontSize: '16px', cursor: 'pointer', background: '#007bff', color: 'white', border: 'none', borderRadius: '5px' }}>
-          Join Server
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <div style={{ padding: '20px', maxWidth: '500px', margin: '0 auto', fontFamily: 'Arial' }}>
-      <h2>Theory of Mind: Game Room</h2>
-      <p style={{ fontSize: '10px', color: '#888' }}>Game ID: {gameData.game_id}</p>
-      
-      {/* Message List Area */}
-      <div style={{ 
-        border: '1px solid #ccc', 
-        height: '350px', 
-        overflowY: 'scroll', 
-        marginBottom: '10px', 
-        padding: '10px',
-        borderRadius: '5px',
-        background: '#f9f9f9',
+    <div
+      style={{
+        height: '100vh',
         display: 'flex',
-        flexDirection: 'column'
-      }}>
-        {messages.length === 0 && <p style={{ color: '#999', textAlign: 'center' }}>No messages yet. Start the conversation!</p>}
-        {messages.map((msg, index) => (
-          <div key={index} style={{ 
-            textAlign: msg.sender_id === gameData.your_id ? 'right' : 'left',
-            margin: '5px 0'
-          }}>
-            <span style={{ 
-              background: msg.sender_id === gameData.your_id ? '#007bff' : '#e9e9eb',
-              color: msg.sender_id === gameData.your_id ? 'white' : 'black',
-              padding: '8px 12px',
-              borderRadius: '15px',
-              display: 'inline-block',
-              maxWidth: '85%',
-              wordWrap: 'break-word'
-            }}>
-              {msg.content}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      {/* Input Area */}
-      <form onSubmit={sendMessage} style={{ display: 'flex', gap: '5px' }}>
-        <input 
-          type="text" 
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-          placeholder="Type a message..." 
-          style={{ flex: 1, padding: '10px', borderRadius: '5px', border: '1px solid #ccc' }}
-        />
-        <button type="submit" style={{ padding: '10px 20px', background: '#28a745', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
-          Send
-        </button>
-      </form>
+        justifyContent: 'center',
+        alignItems: 'center',
+        background: '#030a16' // dark blue
+      }}
+    >
+      <button
+        onClick={joinServer}
+        style={{
+          padding: '20px 40px',
+          fontSize: '24px',
+          cursor: 'pointer',
+          background: '#2563eb',
+          color: 'white',
+          border: 'none',
+          borderRadius: '12px',
+          boxShadow: '0 10px 25px rgba(0,0,0,0.3)',
+          transition: 'transform 0.1s ease, box-shadow 0.1s ease'
+        }}
+        onMouseDown={(e) => (e.currentTarget.style.transform = 'scale(0.96)')}
+        onMouseUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+      >
+        Join Server
+      </button>
     </div>
   );
+}
+
+
+  return (
+  <div style={{
+    height: '100vh',
+    background: '#030a16',
+    color: 'white',
+    display: 'flex',
+    flexDirection: 'column',
+    fontFamily: 'Arial'
+  }}>
+
+    {/* Header */}
+    <div style={{
+      padding: '15px 20px',
+      borderBottom: '1px solid #1f2a44',
+      fontWeight: 'bold'
+    }}>
+      Theory of Mind — Game Room
+      <span style={{ fontSize: '12px', color: '#8aa0c8', marginLeft: '10px' }}>
+        ID: {gameData.game_id}
+      </span>
+    </div>
+
+    {/* Main content */}
+    <div style={{ flex: 1, display: 'flex' }}>
+
+      {/* LEFT: Players panel (placeholder for now) */}
+      <div style={{
+        width: '220px',
+        borderRight: '1px solid #1f2a44',
+        padding: '15px'
+      }}>
+        <h3 style={{ marginTop: 0 }}>Players</h3>
+
+        {/* Temporary fake players until backend provides */}
+        <div style={{ color: '#9fb3d9', fontSize: '14px', lineHeight: '1.8' }}>
+          You<br/>
+          Waiting...
+        </div>
+      </div>
+
+      {/* RIGHT: Chat area */}
+      <div style={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        padding: '15px'
+      }}>
+
+        {/* Messages */}
+        <div style={{
+          flex: 1,
+          overflowY: 'auto',
+          marginBottom: '10px',
+          paddingRight: '5px'
+        }}>
+          {messages.length === 0 && (
+            <p style={{ color: '#6f85b3', textAlign: 'center' }}>
+              No messages yet. Start the conversation!
+            </p>
+          )}
+
+          {messages.map((msg, index) => (
+            <div key={index} style={{
+              textAlign: msg.sender_id === gameData.your_id ? 'right' : 'left',
+              margin: '6px 0'
+            }}>
+              <span style={{
+                background: msg.sender_id === gameData.your_id ? '#2563eb' : '#1f2a44',
+                color: 'white',
+                padding: '8px 12px',
+                borderRadius: '14px',
+                display: 'inline-block',
+                maxWidth: '70%',
+                wordWrap: 'break-word'
+              }}>
+                {msg.content}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* Input */}
+        <form onSubmit={sendMessage} style={{ display: 'flex', gap: '8px' }}>
+          <input
+            type="text"
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            placeholder="Type a message..."
+            style={{
+              flex: 1,
+              padding: '10px',
+              borderRadius: '6px',
+              border: 'none',
+              outline: 'none'
+            }}
+          />
+          <button
+            type="submit"
+            style={{
+              padding: '10px 18px',
+              background: '#22c55e',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer'
+            }}
+          >
+            Send
+          </button>
+        </form>
+
+      </div>
+    </div>
+  </div>
+);
+
 }
 
 export default Chat;
