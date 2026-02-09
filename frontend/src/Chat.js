@@ -124,18 +124,95 @@ function Chat() {
       {/* Main content */}
       <div style={{ flex: 1, display: 'flex' }}>
 
-        {/* LEFT: Players panel */}
-        <div style={{
-          width: '220px',
-          borderRight: '1px solid #1f2a44',
-          padding: '15px'
-        }}>
-          <h3 style={{ marginTop: 0 }}>Players</h3>
-          <div style={{ color: '#9fb3d9', fontSize: '14px', lineHeight: '1.8' }}>
-            You<br/>
-            Waiting...
-          </div>
-        </div>
+        {/* LEFT: Game info panel */}
+<div style={{
+  width: '260px',
+  borderRight: '1px solid #1f2a44',
+  padding: '20px',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '18px'
+}}>
+
+  {/* Round + Timer */}
+  <div style={{
+    display: 'flex',
+    justifyContent: 'space-between',
+    fontSize: '14px',
+    color: '#9fb3d9'
+  }}>
+    <span>Round {1}/5</span>
+    <span>⏱ 00:45</span>
+  </div>
+
+  {/* Word Prompt Box */}
+  <div style={{
+    background: '#111a2e',
+    border: '1px solid #2a3a5f',
+    borderRadius: '12px',
+    padding: '25px 10px',
+    textAlign: 'center'
+  }}>
+    <div style={{
+      fontSize: '12px',
+      color: '#8aa0c8',
+      marginBottom: '8px'
+    }}>
+      Your Word
+    </div>
+
+    <div style={{
+      fontSize: '26px',
+      fontWeight: 'bold',
+      letterSpacing: '2px'
+    }}>
+      APPLE
+    </div>
+  </div>
+
+  {/* Role Box */}
+  <div style={{
+    textAlign: 'center',
+    padding: '15px',
+    borderRadius: '10px',
+    background: '#0f172a',
+    border: '1px solid #1f2a44'
+  }}>
+    <div style={{ fontSize: '12px', color: '#8aa0c8' }}>
+      Your Role
+    </div>
+
+    <div style={{
+      marginTop: '6px',
+      fontSize: '18px',
+      fontWeight: 'bold',
+      color: '#22c55e' // change to red if imposter later
+    }}>
+      Crewmate
+    </div>
+  </div>
+
+  {/* How to Play */}
+  <div style={{
+    marginTop: 'auto',
+    fontSize: '12px',
+    color: '#8aa0c8',
+    lineHeight: '1.5'
+  }}>
+    <div style={{
+      fontWeight: 'bold',
+      marginBottom: '6px',
+      color: 'white'
+    }}>
+      How to Play
+    </div>
+
+    Describe your word without saying it directly.
+    Find the imposter before time runs out.
+  </div>
+
+</div>
+
 
         {/* RIGHT: Chat area */}
         <div style={{
