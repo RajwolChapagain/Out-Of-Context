@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { createClient } from '@supabase/supabase-js';
+import Voting from './Voting'; 
 
 // Supabase client using environment variables (safe for pushing)
 const supabase = createClient(
@@ -12,6 +13,7 @@ function Chat() {
   const [gameData, setGameData] = useState(null);
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
+  const [showVoting, setShowVoting] = useState(false); 
 
   // Join the server via Django
   const joinServer = async () => {
@@ -63,6 +65,12 @@ function Chat() {
 
     if (!error) setInputText('');
   };
+
+  // Temporary: If showing voting panel, render it instead
+  if (showVoting && gameData) {
+    return <Voting gameData={gameData} onBackToChat={() => setShowVoting(false)} />;
+  }
+  // End Temporary
 
   // If not joined yet, show big centered "Join Server" button
   if (!gameData) {
@@ -210,6 +218,34 @@ function Chat() {
     Describe your word without saying it directly.
     Find the imposter before time runs out.
   </div>
+
+  {/*Temporary: used to create temp button to go btwn chat and voting*/}
+  <button
+    onClick={() => setShowVoting(true)}
+    style={{
+      marginTop: '20px',
+      padding: '12px 20px',
+      fontSize: '14px',
+      fontWeight: 'bold',
+      background: '#ef4444',
+      color: 'white',
+      border: 'none',
+      borderRadius: '8px',
+      cursor: 'pointer',
+      width: '100%',
+      transition: 'all 0.2s ease'
+    }}
+    onMouseEnter={(e) => {
+      e.currentTarget.style.background = '#dc2626';
+      e.currentTarget.style.transform = 'scale(1.02)';
+    }}
+    onMouseLeave={(e) => {
+      e.currentTarget.style.background = '#ef4444';
+      e.currentTarget.style.transform = 'scale(1)';
+    }}
+  >
+    🗳️ Go to Voting
+  </button>
 
 </div>
 
