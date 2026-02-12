@@ -8,7 +8,8 @@ const supabase = createClient(
   process.env.REACT_APP_SUPABASE_ANON_KEY
 );
 
-//Temporary: used to create temp button to go btwn chat and voting 
+// Temporarily changed function declaration for temp button to go btwn chat and voting 
+// OG function declaration: function Voting({ gameData }) {
 function Voting({ gameData, onBackToChat }) {
   const [selectedVote, setSelectedVote] = useState(null); 
   const [timeLeft, setTimeLeft] = useState(15); // set to 15 seconds for now
