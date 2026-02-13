@@ -3,32 +3,117 @@ import axios from 'axios';
 import { createClient } from '@supabase/supabase-js';
 import Voting from './Voting';
 
-// Supabase client using environment variables (safe for pushing)
+// Supabase client
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL,
   process.env.REACT_APP_SUPABASE_ANON_KEY
 );
 
+// Lobby component
+function Lobby({ gameData, onStart }) {
+  const [players, setPlayers] = useState([]);
+
+  useEffect(() => {
+    // Fetch initial players
+    const fetchPlayers = async () => {
+      const { data } = await supabase
+        .from('players')
+        .select('*')
+        .eq('game_id', gameData.game_id);
+      setPlayers(data || []);
+    };
+    fetchPlayers();
+
+    // Subscribe to new player joins
+    const channel = supabase
+      .channel(`game-${gameData.game_id}-players`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'players',
+          filter: `game_id=eq.${gameData.game_id}`,
+        },
+        (payload) => setPlayers((prev) => [...prev, payload.new])
+      )
+      .subscribe();
+
+    return () => supabase.removeChannel(channel);
+  }, [gameData.game_id]);
+
+  return (
+    <div
+      style={{
+        height: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        background: '#030a16',
+        color: 'white',
+        fontFamily: 'Arial',
+      }}
+    >
+      <h2>Lobby — Waiting for players...</h2>
+      <p>
+        {players.length} / 4 joined
+      </p>
+      <ul style={{ listStyle: 'none', padding: 0 }}>
+        {players.map((p) => (
+          <li key={p.id} style={{ margin: '6px 0' }}>
+            {p.name}
+          </li>
+        ))}
+      </ul>
+
+      {players.length === 4 && (
+        <button
+          onClick={onStart}
+          style={{
+            marginTop: '20px',
+            padding: '12px 24px',
+            background: '#22c55e',
+            border: 'none',
+            borderRadius: '8px',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+          }}
+        >
+          Start Game
+        </button>
+      )}
+    </div>
+  );
+}
+
 function Chat() {
   const [gameData, setGameData] = useState(null);
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
-  const [showVoting, setShowVoting] = useState(false); 
+  const [showVoting, setShowVoting] = useState(false);
   const [meetingOpen, setMeetingOpen] = useState(false);
+  const [inLobby, setInLobby] = useState(false);
 
   // Join the server via Django
   const joinServer = async () => {
     try {
       const res = await axios.get('http://localhost:8000/join/');
       setGameData(res.data);
+      setInLobby(true); // go to lobby first
+
+      // Insert player into Supabase
+      await supabase.from('players').insert([
+        { game_id: res.data.game_id, name: res.data.username || 'Player' }
+      ]);
     } catch (err) {
       alert("Backend not reached. Is Docker running?");
     }
   };
 
-  // Real-time listener: fetch existing messages and subscribe to new ones
+  // Real-time messages listener
   useEffect(() => {
-    if (!gameData) return;
+    if (!gameData || inLobby) return; // wait until game starts
 
     const fetchExisting = async () => {
       const { data } = await supabase
@@ -50,7 +135,7 @@ function Chat() {
       .subscribe();
 
     return () => supabase.removeChannel(channel);
-  }, [gameData]);
+  }, [gameData, inLobby]);
 
   // Send message
   const sendMessage = async (e) => {
@@ -68,7 +153,17 @@ function Chat() {
     if (!error) setInputText('');
   };
 
-  // If not joined yet, show big centered "Join Server" button
+  // Lobby screen
+  if (inLobby && gameData) {
+    return <Lobby gameData={gameData} onStart={() => setInLobby(false)} />;
+  }
+
+  // Voting screen
+  if (showVoting && gameData) {
+    return <Voting gameData={gameData} onBackToChat={() => setShowVoting(false)} />;
+  }
+
+  // Join screen
   if (!gameData) {
     return (
       <div
@@ -102,7 +197,7 @@ function Chat() {
     );
   }
 
-  // Game room / lobby layout
+  // Game room
   return (
     <div
       style={{
@@ -130,7 +225,7 @@ function Chat() {
 
       {/* Main content */}
       <div style={{ flex: 1, display: 'flex' }}>
-        {/* LEFT: Game info panel */}
+        {/* LEFT panel (game info) */}
         <div
           style={{
             width: '260px',
@@ -154,7 +249,7 @@ function Chat() {
             <span>⏱ 00:45</span>
           </div>
 
-          {/* Word Prompt Box */}
+          {/* Word Box */}
           <div
             style={{
               background: '#111a2e',
@@ -164,23 +259,10 @@ function Chat() {
               textAlign: 'center'
             }}
           >
-            <div
-              style={{
-                fontSize: '12px',
-                color: '#8aa0c8',
-                marginBottom: '8px'
-              }}
-            >
+            <div style={{ fontSize: '12px', color: '#8aa0c8', marginBottom: '8px' }}>
               Your Word
             </div>
-
-            <div
-              style={{
-                fontSize: '26px',
-                fontWeight: 'bold',
-                letterSpacing: '2px'
-              }}
-            >
+            <div style={{ fontSize: '26px', fontWeight: 'bold', letterSpacing: '2px' }}>
               APPLE
             </div>
           </div>
@@ -196,15 +278,7 @@ function Chat() {
             }}
           >
             <div style={{ fontSize: '12px', color: '#8aa0c8' }}>Your Role</div>
-
-            <div
-              style={{
-                marginTop: '6px',
-                fontSize: '18px',
-                fontWeight: 'bold',
-                color: '#22c55e'
-              }}
-            >
+            <div style={{ marginTop: '6px', fontSize: '18px', fontWeight: 'bold', color: '#22c55e' }}>
               Crewmate
             </div>
           </div>
@@ -235,87 +309,51 @@ function Chat() {
           </button>
 
           {/* How to Play */}
-          <div
-            style={{
-              marginTop: 'auto',
-              fontSize: '12px',
-              color: '#8aa0c8',
-              lineHeight: '1.5'
-            }}
-          >
-            <div
-              style={{
-                fontWeight: 'bold',
-                marginBottom: '6px',
-                color: 'white'
-              }}
-            >
-              How to Play
-            </div>
-
+          <div style={{ marginTop: 'auto', fontSize: '12px', color: '#8aa0c8', lineHeight: '1.5' }}>
+            <div style={{ fontWeight: 'bold', marginBottom: '6px', color: 'white' }}>How to Play</div>
             Describe your word without saying it directly. Find the imposter before time runs out.
           </div>
 
-          {/*Temporary: used to create temp button to go btwn chat and voting*/}
-  <button
-    onClick={() => setShowVoting(true)}
-    style={{
-      marginTop: '20px',
-      padding: '12px 20px',
-      fontSize: '14px',
-      fontWeight: 'bold',
-      background: '#ef4444',
-      color: 'white',
-      border: 'none',
-      borderRadius: '8px',
-      cursor: 'pointer',
-      width: '100%',
-      transition: 'all 0.2s ease'
-    }}
-    onMouseEnter={(e) => {
-      e.currentTarget.style.background = '#dc2626';
-      e.currentTarget.style.transform = 'scale(1.02)';
-    }}
-    onMouseLeave={(e) => {
-      e.currentTarget.style.background = '#ef4444';
-      e.currentTarget.style.transform = 'scale(1)';
-    }}
-  >
-    🗳️ Go to Voting
-  </button>
-        </div>
-
-        {/* RIGHT: Chat area */}
-        <div
-          style={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            padding: '15px'
-          }}
-        >
-          {/* Messages */}
-          <div
+          {/* Voting button */}
+          <button
+            onClick={() => setShowVoting(true)}
             style={{
-              flex: 1,
-              overflowY: 'auto',
-              marginBottom: '10px',
-              paddingRight: '5px'
+              marginTop: '20px',
+              padding: '12px 20px',
+              fontSize: '14px',
+              fontWeight: 'bold',
+              background: '#ef4444',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              width: '100%',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#dc2626';
+              e.currentTarget.style.transform = 'scale(1.02)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = '#ef4444';
+              e.currentTarget.style.transform = 'scale(1)';
             }}
           >
+            🗳️ Go to Voting
+          </button>
+        </div>
+
+        {/* RIGHT panel (chat) */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '15px' }}>
+          <div style={{ flex: 1, overflowY: 'auto', marginBottom: '10px', paddingRight: '5px' }}>
             {messages.length === 0 && (
-              <p style={{ color: '#6f85b3', textAlign: 'center' }}>
-                No messages yet. Start the conversation!
-              </p>
+              <p style={{ color: '#6f85b3', textAlign: 'center' }}>No messages yet. Start the conversation!</p>
             )}
 
             {messages.map((msg, index) => (
               <div
                 key={index}
-                style={{
-                  textAlign: msg.sender_id === gameData.your_id ? 'right' : 'left',
-                  margin: '6px 0'
-                }}
+                style={{ textAlign: msg.sender_id === gameData.your_id ? 'right' : 'left', margin: '6px 0' }}
               >
                 <span
                   style={{
@@ -334,31 +372,17 @@ function Chat() {
             ))}
           </div>
 
-          {/* Input */}
           <form onSubmit={sendMessage} style={{ display: 'flex', gap: '8px' }}>
             <input
               type="text"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               placeholder="Type a message..."
-              style={{
-                flex: 1,
-                padding: '10px',
-                borderRadius: '6px',
-                border: 'none',
-                outline: 'none'
-              }}
+              style={{ flex: 1, padding: '10px', borderRadius: '6px', border: 'none', outline: 'none' }}
             />
             <button
               type="submit"
-              style={{
-                padding: '10px 18px',
-                background: '#22c55e',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer'
-              }}
+              style={{ padding: '10px 18px', background: '#22c55e', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
             >
               Send
             </button>
