@@ -12,6 +12,7 @@ function Chat() {
   const [gameData, setGameData] = useState(null);
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
+  const [meetingOpen, setMeetingOpen] = useState(false);
 
   // Join the server via Django
   const joinServer = async () => {
@@ -39,8 +40,9 @@ function Chat() {
 
     const channel = supabase
       .channel(`game-${gameData.game_id}`)
-      .on('postgres_changes', 
-        { event: 'INSERT', schema: 'public', table: 'messages', filter: `game_id=eq.${gameData.game_id}` }, 
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `game_id=eq.${gameData.game_id}` },
         (payload) => setMessages((prev) => [...prev, payload.new])
       )
       .subscribe();
@@ -73,7 +75,7 @@ function Chat() {
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          background: '#030a16' // dark blue
+          background: '#030a16'
         }}
       >
         <button
@@ -100,21 +102,24 @@ function Chat() {
 
   // Game room / lobby layout
   return (
-    <div style={{
-      height: '100vh',
-      background: '#030a16',
-      color: 'white',
-      display: 'flex',
-      flexDirection: 'column',
-      fontFamily: 'Arial'
-    }}>
-
+    <div
+      style={{
+        height: '100vh',
+        background: '#030a16',
+        color: 'white',
+        display: 'flex',
+        flexDirection: 'column',
+        fontFamily: 'Arial'
+      }}
+    >
       {/* Header */}
-      <div style={{
-        padding: '15px 20px',
-        borderBottom: '1px solid #1f2a44',
-        fontWeight: 'bold'
-      }}>
+      <div
+        style={{
+          padding: '15px 20px',
+          borderBottom: '1px solid #1f2a44',
+          fontWeight: 'bold'
+        }}
+      >
         Theory of Mind — Game Room
         <span style={{ fontSize: '12px', color: '#8aa0c8', marginLeft: '10px' }}>
           ID: {gameData.game_id}
@@ -123,112 +128,151 @@ function Chat() {
 
       {/* Main content */}
       <div style={{ flex: 1, display: 'flex' }}>
-
         {/* LEFT: Game info panel */}
-<div style={{
-  width: '260px',
-  borderRight: '1px solid #1f2a44',
-  padding: '20px',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '18px'
-}}>
+        <div
+          style={{
+            width: '260px',
+            borderRight: '1px solid #1f2a44',
+            padding: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '18px'
+          }}
+        >
+          {/* Round + Timer */}
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              fontSize: '14px',
+              color: '#9fb3d9'
+            }}
+          >
+            <span>Round {1}/5</span>
+            <span>⏱ 00:45</span>
+          </div>
 
-  {/* Round + Timer */}
-  <div style={{
-    display: 'flex',
-    justifyContent: 'space-between',
-    fontSize: '14px',
-    color: '#9fb3d9'
-  }}>
-    <span>Round {1}/5</span>
-    <span>⏱ 00:45</span>
-  </div>
+          {/* Word Prompt Box */}
+          <div
+            style={{
+              background: '#111a2e',
+              border: '1px solid #2a3a5f',
+              borderRadius: '12px',
+              padding: '25px 10px',
+              textAlign: 'center'
+            }}
+          >
+            <div
+              style={{
+                fontSize: '12px',
+                color: '#8aa0c8',
+                marginBottom: '8px'
+              }}
+            >
+              Your Word
+            </div>
 
-  {/* Word Prompt Box */}
-  <div style={{
-    background: '#111a2e',
-    border: '1px solid #2a3a5f',
-    borderRadius: '12px',
-    padding: '25px 10px',
-    textAlign: 'center'
-  }}>
-    <div style={{
-      fontSize: '12px',
-      color: '#8aa0c8',
-      marginBottom: '8px'
-    }}>
-      Your Word
-    </div>
+            <div
+              style={{
+                fontSize: '26px',
+                fontWeight: 'bold',
+                letterSpacing: '2px'
+              }}
+            >
+              APPLE
+            </div>
+          </div>
 
-    <div style={{
-      fontSize: '26px',
-      fontWeight: 'bold',
-      letterSpacing: '2px'
-    }}>
-      APPLE
-    </div>
-  </div>
+          {/* Role Box */}
+          <div
+            style={{
+              textAlign: 'center',
+              padding: '15px',
+              borderRadius: '10px',
+              background: '#0f172a',
+              border: '1px solid #1f2a44'
+            }}
+          >
+            <div style={{ fontSize: '12px', color: '#8aa0c8' }}>Your Role</div>
 
-  {/* Role Box */}
-  <div style={{
-    textAlign: 'center',
-    padding: '15px',
-    borderRadius: '10px',
-    background: '#0f172a',
-    border: '1px solid #1f2a44'
-  }}>
-    <div style={{ fontSize: '12px', color: '#8aa0c8' }}>
-      Your Role
-    </div>
+            <div
+              style={{
+                marginTop: '6px',
+                fontSize: '18px',
+                fontWeight: 'bold',
+                color: '#22c55e'
+              }}
+            >
+              Crewmate
+            </div>
+          </div>
 
-    <div style={{
-      marginTop: '6px',
-      fontSize: '18px',
-      fontWeight: 'bold',
-      color: '#22c55e' // change to red if imposter later
-    }}>
-      Crewmate
-    </div>
-  </div>
+          {/* Emergency Meeting Button */}
+          <button
+            onClick={() => setMeetingOpen(true)}
+            style={{
+              background: '#b91c1c',
+              color: 'white',
+              border: 'none',
+              borderRadius: '50%',
+              width: '140px',
+              height: '140px',
+              margin: '0 auto',
+              fontWeight: 'bold',
+              fontSize: '14px',
+              cursor: 'pointer',
+              boxShadow: '0 0 25px rgba(255,0,0,0.6)',
+              transition: 'transform 0.1s ease'
+            }}
+            onMouseDown={(e) => (e.currentTarget.style.transform = 'scale(0.95)')}
+            onMouseUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+          >
+            EMERGENCY
+            <br />
+            MEETING
+          </button>
 
-  {/* How to Play */}
-  <div style={{
-    marginTop: 'auto',
-    fontSize: '12px',
-    color: '#8aa0c8',
-    lineHeight: '1.5'
-  }}>
-    <div style={{
-      fontWeight: 'bold',
-      marginBottom: '6px',
-      color: 'white'
-    }}>
-      How to Play
-    </div>
+          {/* How to Play */}
+          <div
+            style={{
+              marginTop: 'auto',
+              fontSize: '12px',
+              color: '#8aa0c8',
+              lineHeight: '1.5'
+            }}
+          >
+            <div
+              style={{
+                fontWeight: 'bold',
+                marginBottom: '6px',
+                color: 'white'
+              }}
+            >
+              How to Play
+            </div>
 
-    Describe your word without saying it directly.
-    Find the imposter before time runs out.
-  </div>
-
-</div>
-
+            Describe your word without saying it directly. Find the imposter before time runs out.
+          </div>
+        </div>
 
         {/* RIGHT: Chat area */}
-        <div style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          padding: '15px'
-        }}>
-
-          {/* Messages */}
-          <div style={{
+        <div
+          style={{
             flex: 1,
-            overflowY: 'auto',
-            marginBottom: '10px',
-            paddingRight: '5px'
-          }}>
+            display: 'flex',
+            flexDirection: 'column',
+            padding: '15px'
+          }}
+        >
+          {/* Messages */}
+          <div
+            style={{
+              flex: 1,
+              overflowY: 'auto',
+              marginBottom: '10px',
+              paddingRight: '5px'
+            }}
+          >
             {messages.length === 0 && (
               <p style={{ color: '#6f85b3', textAlign: 'center' }}>
                 No messages yet. Start the conversation!
@@ -236,19 +280,24 @@ function Chat() {
             )}
 
             {messages.map((msg, index) => (
-              <div key={index} style={{
-                textAlign: msg.sender_id === gameData.your_id ? 'right' : 'left',
-                margin: '6px 0'
-              }}>
-                <span style={{
-                  background: msg.sender_id === gameData.your_id ? '#2563eb' : '#1f2a44',
-                  color: 'white',
-                  padding: '8px 12px',
-                  borderRadius: '14px',
-                  display: 'inline-block',
-                  maxWidth: '70%',
-                  wordWrap: 'break-word'
-                }}>
+              <div
+                key={index}
+                style={{
+                  textAlign: msg.sender_id === gameData.your_id ? 'right' : 'left',
+                  margin: '6px 0'
+                }}
+              >
+                <span
+                  style={{
+                    background: msg.sender_id === gameData.your_id ? '#2563eb' : '#1f2a44',
+                    color: 'white',
+                    padding: '8px 12px',
+                    borderRadius: '14px',
+                    display: 'inline-block',
+                    maxWidth: '70%',
+                    wordWrap: 'break-word'
+                  }}
+                >
                   {msg.content}
                 </span>
               </div>
@@ -284,9 +333,58 @@ function Chat() {
               Send
             </button>
           </form>
-
         </div>
       </div>
+
+      {/* Emergency Meeting Modal */}
+      {meetingOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(0,0,0,0.85)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1000
+          }}
+        >
+          <div
+            style={{
+              background: '#0f172a',
+              padding: '30px',
+              borderRadius: '12px',
+              width: '420px',
+              textAlign: 'center',
+              border: '2px solid #ef4444'
+            }}
+          >
+            <h2 style={{ color: '#ef4444', marginBottom: '10px' }}>🚨 Emergency Meeting</h2>
+
+            <p style={{ color: '#9fb3d9', fontSize: '14px' }}>
+              Meeting UI will go here next (player voting, discussion timer, etc.)
+            </p>
+
+            <button
+              onClick={() => setMeetingOpen(false)}
+              style={{
+                marginTop: '20px',
+                padding: '10px 20px',
+                background: '#2563eb',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer'
+              }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
