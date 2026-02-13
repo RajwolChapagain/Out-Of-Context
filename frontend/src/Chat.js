@@ -68,6 +68,11 @@ function Chat() {
     if (!error) setInputText('');
   };
 
+  // Temporary: if voting view is toggled on, render Voting panel instead of chat
+  if (showVoting && gameData) {
+    return <Voting gameData={gameData} onBackToChat={() => setShowVoting(false)} />;
+  }
+
   // If not joined yet, show big centered "Join Server" button
   if (!gameData) {
     return (

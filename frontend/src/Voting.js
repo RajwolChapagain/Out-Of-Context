@@ -19,28 +19,51 @@ function Voting({ gameData, onBackToChat }) {
 
   // Fetch other players from Supabase
   useEffect(() => {
-    if (!gameData) return;
+    if (!gameData || !gameData.game_id || !gameData.your_id) {
+      console.log('Voting: Missing gameData:', { gameData, hasGameId: !!gameData?.game_id, hasYourId: !!gameData?.your_id });
+      return;
+    }
 
     const fetchPlayers = async () => {
       try {
         setLoadingPlayers(true);
+        console.log('Voting: Fetching players for game_id:', gameData.game_id, 'excluding:', gameData.your_id);
+        
+        // First, try to get ALL players to debug
+        const { data: allData, error: allError } = await supabase
+          .from('players')
+          .select('user_id')
+          .eq('game_id', gameData.game_id);
+        
+        console.log('Voting: ALL players query result:', { allData, allError });
+
+        // Then get other players (excluding yourself)
         const { data, error } = await supabase
           .from('players')
           .select('user_id')
           .eq('game_id', gameData.game_id)
-          .neq('user_id', gameData.your_id); // Exclude yourself
+          .neq('user_id', gameData.your_id);
+
+        console.log('Voting: OTHER players query result:', { data, error, dataLength: data?.length });
 
         if (error) {
-          console.error('Error fetching players:', error);
+          console.error('Voting: Error fetching players:', error);
+          setOtherPlayers([]);
+          setLoadingPlayers(false);
           return;
         }
 
         // store other players in state
-        if (data && data.length > 0) {
+        if (data && Array.isArray(data) && data.length > 0) {
+          console.log('Voting: Setting players:', data);
           setOtherPlayers(data);
+        } else {
+          console.log('Voting: No other players found. Data:', data, 'Type:', typeof data, 'IsArray:', Array.isArray(data));
+          setOtherPlayers([]);
         }
       } catch (err) {
-        console.error('Unexpected error fetching players:', err);
+        console.error('Voting: Unexpected error:', err);
+        setOtherPlayers([]);
       } finally {
         setLoadingPlayers(false);
       }
@@ -103,7 +126,6 @@ function Voting({ gameData, onBackToChat }) {
       //     game_id: gameData.game_id,
       //     voter_id: gameData.your_id,
       //     voted_for_id: selectedVote, // Now uses actual player_id
-      //     round: 1,
       //     timestamp: new Date().toISOString()
       //   }
       // ]);
@@ -310,7 +332,9 @@ function Voting({ gameData, onBackToChat }) {
                 No other players found in this game.
               </div>
             ) : (
-              otherPlayers.map((player, index) => {
+              otherPlayers
+                .filter(player => player && player.user_id)
+                .map((player, index) => {
                 const playerId = player.user_id;
                 const isSelected = selectedVote === playerId;
                 const label = String.fromCharCode(65 + index); // A, B, C, D (65 is 'A' in ASCII)
