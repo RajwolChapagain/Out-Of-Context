@@ -5,8 +5,8 @@ import Voting from './Voting';
 
 // Supabase client using environment variables (safe for pushing)
 const supabase = createClient(
-  process.env.REACT_APP_SUPABASE_URL,
-  process.env.REACT_APP_SUPABASE_ANON_KEY
+  'https://ialzxgcgkzvgxjzgglkc.supabase.co',
+  'sb_publishable_RC7ubywKk9G_vz0eiuBlPw_NwGnvuev'
 );
 
 function Chat() {
