@@ -1,6 +1,7 @@
 .env
 frontend/.env
 backend/.env
+backend/game/__pycache__
 node_modules/
 frontend/node_modules/
 __pycache__/
