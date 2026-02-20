@@ -28,7 +28,6 @@ def join_game(request):
     supabase.table("players").insert({
         "user_id": player_id,
         "game_id": game_id,
-        "role": "human"
     }).execute()
 
     return JsonResponse({
