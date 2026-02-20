@@ -94,22 +94,19 @@ function Chat() {
   const [showVoting, setShowVoting] = useState(false);
   const [meetingOpen, setMeetingOpen] = useState(false);
   const [inLobby, setInLobby] = useState(false);
+  const [meetingPhase, setMeetingPhase] = useState("discussion"); 
+  const [meetingTimer, setMeetingTimer] = useState(0);
 
   // Join the server via Django
   const joinServer = async () => {
-    try {
-      const res = await axios.get('http://localhost:8000/join/');
-      setGameData(res.data);
-      setInLobby(true); // go to lobby first
-
-      // Insert player into Supabase
-      await supabase.from('players').insert([
-        { game_id: res.data.game_id, name: res.data.username || 'Player' }
-      ]);
-    } catch (err) {
-      alert("Backend not reached. Is Docker running?");
-    }
-  };
+  try {
+    const res = await axios.get('http://localhost:8000/join/');
+    setGameData(res.data);
+    setInLobby(true); // go to lobby first
+  } catch (err) {
+    alert("Backend not reached. Is Docker running?");
+  }
+};
 
   // Real-time messages listener
   useEffect(() => {
@@ -124,6 +121,7 @@ function Chat() {
       if (data) setMessages(data);
     };
     fetchExisting();
+    
 
     const channel = supabase
       .channel(`game-${gameData.game_id}`)
@@ -136,6 +134,29 @@ function Chat() {
 
     return () => supabase.removeChannel(channel);
   }, [gameData, inLobby]);
+
+  useEffect(() => {
+  if (!meetingOpen) return;
+
+  if (meetingTimer <= 0) {
+    if (meetingPhase === "discussion") {
+      // Switch to voting
+      setMeetingPhase("voting");
+      setMeetingTimer(20); // 20 sec voting
+    } else {
+      // Voting finished
+      setMeetingOpen(false);
+      setMeetingPhase("discussion");
+    }
+    return;
+  }
+
+  const interval = setInterval(() => {
+    setMeetingTimer((prev) => prev - 1);
+  }, 1000);
+
+  return () => clearInterval(interval);
+}, [meetingTimer, meetingOpen, meetingPhase]);
 
   // Send message
   const sendMessage = async (e) => {
@@ -285,7 +306,7 @@ function Chat() {
 
           {/* Emergency Meeting Button */}
           <button
-            onClick={() => setMeetingOpen(true)}
+            onClick={() => {setMeetingOpen(true); setMeetingPhase("discussion"); setMeetingTimer(30);}} // 30 sec discussion
             style={{
               background: '#b91c1c',
               color: 'white',
@@ -392,53 +413,161 @@ function Chat() {
 
       {/* Emergency Meeting Modal */}
       {meetingOpen && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100vw',
-            height: '100vh',
-            background: 'rgba(0,0,0,0.85)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 1000
-          }}
-        >
+  <div
+    style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      width: '100vw',
+      height: '100vh',
+      background: 'rgba(0,0,0,0.7)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1000,
+      pointerEvents: "auto"
+    }}
+  >
+    <div
+      style={{
+        background: '#0f172a',
+        padding: '25px',
+        borderRadius: '12px',
+        width: '600px',
+        height: '500px',
+        display: 'flex',
+        flexDirection: 'column',
+        border: '2px solid #ef4444'
+      }}
+    >
+      <h2 style={{ color: '#ef4444' }}>🚨 Emergency Meeting</h2>
+
+      {/* TIMER */}
+      <div
+        style={{
+          textAlign: 'center',
+          fontSize: '28px',
+          marginBottom: '10px',
+          color: meetingPhase === "discussion" ? "white" : "#22c55e"
+        }}
+      >
+        {meetingPhase === "discussion" ? "Discussion" : "Voting"} — {meetingTimer}s
+      </div>
+
+      {/* CHAT AREA */}
+      <div
+        style={{
+          flex: 1,
+          overflowY: 'auto',
+          background: '#111a2e',
+          padding: '10px',
+          borderRadius: '8px',
+          marginBottom: '10px'
+        }}
+      >
+        {messages.map((msg, index) => (
           <div
+            key={index}
             style={{
-              background: '#0f172a',
-              padding: '30px',
-              borderRadius: '12px',
-              width: '420px',
-              textAlign: 'center',
-              border: '2px solid #ef4444'
+              textAlign: msg.sender_id === gameData.your_id ? 'right' : 'left',
+              margin: '6px 0'
             }}
           >
-            <h2 style={{ color: '#ef4444', marginBottom: '10px' }}>🚨 Emergency Meeting</h2>
-
-            <p style={{ color: '#9fb3d9', fontSize: '14px' }}>
-              Meeting UI will go here next (player voting, discussion timer, etc.)
-            </p>
-
-            <button
-              onClick={() => setMeetingOpen(false)}
+            <span
               style={{
-                marginTop: '20px',
-                padding: '10px 20px',
-                background: '#2563eb',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer'
+                background: msg.sender_id === gameData.your_id ? '#2563eb' : '#1f2a44',
+                padding: '6px 10px',
+                borderRadius: '12px',
+                display: 'inline-block',
+                maxWidth: '70%',
+                fontSize: '14px'
               }}
             >
-              Close
-            </button>
+              {msg.content}
+            </span>
           </div>
+        ))}
+      </div>
+
+      {/* INPUT FORM FOR DISCUSSION */}
+      {meetingPhase === "discussion" && (
+        <form onSubmit={sendMessage} style={{ display: 'flex', gap: '8px' }}>
+          <input
+            type="text"
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            placeholder="Discuss..."
+            style={{
+              flex: 1,
+              padding: '8px',
+              borderRadius: '6px',
+              border: 'none'
+            }}
+          />
+          <button
+            type="submit"
+            style={{
+              padding: '8px 16px',
+              background: '#22c55e',
+              border: 'none',
+              borderRadius: '6px',
+              color: 'white',
+              cursor: 'pointer'
+            }}
+          >
+            Send
+          </button>
+        </form>
+      )}
+
+      {/* VOTING PHASE */}
+      {meetingPhase === "voting" && (
+        <div>
+          <p style={{ color: '#9fb3d9', marginTop: '10px' }}>Voting Time</p>
+
+          <div style={{ fontSize: '32px', margin: '15px 0', color: '#22c55e' }}>
+            {meetingTimer}s
+          </div>
+
+          <p style={{ fontSize: '14px', color: '#8aa0c8' }}>
+            Vote for who you suspect!
+          </p>
+
+          <button
+            onClick={() => setShowVoting(true)}
+            style={{
+              marginTop: '10px',
+              padding: '10px 20px',
+              background: '#ef4444',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer'
+            }}
+          >
+            Open Voting Panel
+          </button>
         </div>
       )}
+
+      {/* CLOSE BUTTON */}
+      <button
+        onClick={() => setMeetingOpen(false)}
+        style={{
+          marginTop: '15px',
+          padding: '10px 20px',
+          background: '#2563eb',
+          color: 'white',
+          border: 'none',
+          borderRadius: '6px',
+          cursor: 'pointer'
+        }}
+      >
+        Close
+      </button>
+    </div>
+  </div>
+)}
     </div>
   );
 }
