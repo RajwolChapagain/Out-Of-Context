@@ -6,3 +6,4 @@ openai
 requests
 django-cors-headers
 python-dotenv
+gunicorn
