@@ -18,10 +18,9 @@ load_dotenv(os.path.join(BASE_DIR, '.env'))
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-# 3. Allow Docker/Localhost to access the server
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['https://out-of-context-167456099297.us-central1.run.app']
 
 
 # Application definition
@@ -49,7 +48,8 @@ MIDDLEWARE = [
 ]
 
 # 4. CORS configuration
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOWED_ORIGINS = ['https://outofcontext.vercel.app/']
 
 ROOT_URLCONF = 'server.urls'
 
