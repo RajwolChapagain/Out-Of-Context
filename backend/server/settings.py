@@ -20,7 +20,7 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['https://out-of-context-167456099297.us-central1.run.app']
+ALLOWED_HOSTS = ['out-of-context-167456099297.us-central1.run.app']
 
 
 # Application definition
@@ -49,7 +49,7 @@ MIDDLEWARE = [
 
 # 4. CORS configuration
 CORS_ALLOW_ALL_ORIGINS = False
-CORS_ALLOWED_ORIGINS = ['https://outofcontext.vercel.app/']
+CORS_ALLOWED_ORIGINS = ['https://outofcontext.vercel.app']
 
 ROOT_URLCONF = 'server.urls'
 
