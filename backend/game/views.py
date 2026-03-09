@@ -1,14 +1,11 @@
 import uuid
 from django.http import JsonResponse
-from django_ratelimit.decorators import ratelimit
 from .supabase_client import supabase
 
-@ratelimit(key='ip', rate='10/m', method='GET', block=True)
 # Keep health for Docker/System checks
 def health(request):
     return JsonResponse({"status": "ok"})
 
-@ratelimit(key='ip', rate='10/m', method='GET', block=True)
 def join_game(request):
     # 1. Look for a game that is still "waiting"
     game_query = supabase.table("games").select("*").eq("status", "waiting").limit(1).execute()
@@ -36,8 +33,10 @@ def join_game(request):
     return JsonResponse({
         "game_id": game_id, 
         "your_id": player_id,
-        "player_number": (player_count.count + 1) if game_query.data else 1
+        "player_number": (player_count.count + 1) if game_query.data else 1,
+        "status": supabase.table("games").select("status").eq("game_id", game_id).limit(1).execute().data[0]['status']
     })
+
 
 #const channel = supabase
 #  .channel('game-messages')
