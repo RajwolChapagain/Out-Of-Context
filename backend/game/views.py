@@ -33,8 +33,10 @@ def join_game(request):
     return JsonResponse({
         "game_id": game_id, 
         "your_id": player_id,
-        "player_number": (player_count.count + 1) if game_query.data else 1
+        "player_number": (player_count.count + 1) if game_query.data else 1,
+        "status": supabase.table("games").select("status").eq("game_id", game_id).limit(1).execute().data[0]['status']
     })
+
 
 #const channel = supabase
 #  .channel('game-messages')
