@@ -35,8 +35,6 @@ def join_game(request):
         "Imposter": False,
     }).execute()
 
-
-
     return JsonResponse({
         "game_id": game_id, 
         "your_id": player_id,
@@ -44,10 +42,6 @@ def join_game(request):
         "status": supabase.table("games").select("status").eq("game_id", game_id).limit(1).execute().data[0]['status'],
         "name": player_count.count,
     })
-
-def game_start():
-    pass
-
 
 def assign_random_turn_order(game_id: str) -> None:
     players_res = supabase.table("players") \
