@@ -23,15 +23,16 @@ def join_game(request):
         # If there is already 4 people, this new person makes 5 (the game is now full).
         if player_count.count >= 4:
             supabase.table("games").update({"status": "active"}).eq("game_id", game_id).execute()
-            randomly_assign_turn_order(game_id)
+            assign_random_turn_order(game_id)
+            assign_random_imposter(game_id)
         
     # 2. Add the current user to this game
     player_id = str(uuid.uuid4())
     supabase.table("players").insert({
         "user_id": player_id,
         "game_id": game_id,
-        "turn_order": player_count.count,
         "Human": True,
+        "Imposter": False,
     }).execute()
 
 
@@ -48,7 +49,7 @@ def game_start():
     pass
 
 
-def randomly_assign_turn_order(game_id: str) -> None:
+def assign_random_turn_order(game_id: str) -> None:
     players_res = supabase.table("players") \
         .select("user_id") \
         .eq("game_id", game_id) \
@@ -64,6 +65,22 @@ def randomly_assign_turn_order(game_id: str) -> None:
             .eq("user_id", player["user_id"]) \
             .eq("game_id", game_id) \
             .execute()
+
+def assign_random_imposter(game_id: str) -> None:
+    players_res = supabase.table("players") \
+        .select("user_id") \
+        .eq("game_id", game_id) \
+        .execute()
+
+    players = players_res.data
+
+    imposter = random.choice(players)
+
+    supabase.table("players") \
+        .update({"Imposter": True}) \
+        .eq("user_id", imposter["user_id"]) \
+        .eq("game_id", game_id) \
+        .execute()
 
 #const channel = supabase
 #  .channel('game-messages')
