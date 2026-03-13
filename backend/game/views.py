@@ -1,3 +1,4 @@
+import random
 import uuid
 from django.http import JsonResponse
 from .supabase_client import supabase
@@ -22,13 +23,14 @@ def join_game(request):
         # If there is already 4 people, this new person makes 5 (the game is now full).
         if player_count.count >= 4:
             supabase.table("games").update({"status": "active"}).eq("game_id", game_id).execute()
+            randomly_assign_turn_order(game_id)
         
     # 2. Add the current user to this game
     player_id = str(uuid.uuid4())
     supabase.table("players").insert({
         "user_id": player_id,
         "game_id": game_id,
-        "name": player_count.count,
+        "turn_order": player_count.count,
         "Human": True,
     }).execute()
 
@@ -46,6 +48,22 @@ def game_start():
     pass
 
 
+def randomly_assign_turn_order(game_id: str) -> None:
+    players_res = supabase.table("players") \
+        .select("user_id") \
+        .eq("game_id", game_id) \
+        .execute()
+
+    players = players_res.data
+
+    random.shuffle(players)
+
+    for turn_order, player in enumerate(players):
+        supabase.table("players") \
+            .update({"turn_order": turn_order}) \
+            .eq("user_id", player["user_id"]) \
+            .eq("game_id", game_id) \
+            .execute()
 
 #const channel = supabase
 #  .channel('game-messages')
