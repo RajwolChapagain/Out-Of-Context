@@ -15,6 +15,24 @@ function Chat() {
   const [inputText, setInputText] = useState('');
   const [showVoting, setShowVoting] = useState(false); 
   const [meetingOpen, setMeetingOpen] = useState(false);
+  const [myTurnID, setMyTurnID] = useState(-1);
+  const [currentTurn, setCurrentTurn] = useState(-1);
+
+  const printJoined = async (data) => {
+    const response = await supabase
+        .from('players')
+        .select('turn_order')
+        .eq('game_id', gameData.game_id)
+        .eq('user_id', gameData.your_id)
+    
+    const currentTurn = await supabase
+        .from('games')
+        .select('current_turn')
+        .eq('game_id', gameData.game_id)
+      
+    setMyTurnID(response.data[0].turn_order);
+    setCurrentTurn(currentTurn.data[0].current_turn);
+  }
 
   // Join the server via Django
   const joinServer = async () => {
@@ -46,6 +64,11 @@ function Chat() {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages', filter: `game_id=eq.${gameData.game_id}` },
         (payload) => setMessages((prev) => [...prev, payload.new])
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'games', filter: `game_id=eq.${gameData.game_id}` },
+        (payload) => printJoined(payload.new)
       )
       .subscribe();
 
@@ -346,6 +369,7 @@ function Chat() {
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               placeholder="Type a message..."
+              disabled={myTurnID !== currentTurn}
               style={{
                 flex: 1,
                 padding: '10px',
