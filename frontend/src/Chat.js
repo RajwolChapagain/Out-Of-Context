@@ -3,7 +3,6 @@ import axios from 'axios';
 import { createClient } from '@supabase/supabase-js';
 import Voting from './Voting';
 
-
 // Supabase client using environment variables (safe for pushing)
 const supabase = createClient(
   'https://ialzxgcgkzvgxjzgglkc.supabase.co',
@@ -17,68 +16,41 @@ function Chat() {
   const [showVoting, setShowVoting] = useState(false); 
   const [meetingOpen, setMeetingOpen] = useState(false);
 
-  const [currentTurn, setCurrentTurn] = useState(false);
-
   // Join the server via Django
   const joinServer = async () => {
     try {
-      const res = await axios.get('http://localhost:8000/join/');
+      const res = await axios.get('http://localhost:8000/join');
       setGameData(res.data);
     } catch (err) {
       alert("Backend not reached. Is Docker running?");
     }
   };
 
-
-
+  // Real-time listener: fetch existing messages and subscribe to new ones
   useEffect(() => {
     if (!gameData) return;
 
-    const fetchMessages = async () => {
-      const { data: messageData, error } = await supabase
+    const fetchExisting = async () => {
+      const { data } = await supabase
         .from('messages')
         .select('*')
         .eq('game_id', gameData.game_id)
         .order('timestamp', { ascending: true });
-
-      console.log("insert result", messageData, error);
-      if (error) console.error("Fetch error:", error);
-
-      if (messageData) {
-        setMessages(messageData);
-      }
+      if (data) setMessages(data);
     };
+    fetchExisting();
 
-    const checkTurn = async () => {
+    const channel = supabase
+      .channel(`game-${gameData.game_id}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `game_id=eq.${gameData.game_id}` },
+        (payload) => setMessages((prev) => [...prev, payload.new])
+      )
+      .subscribe();
 
-      console.log("Checking turn...");
-      const { data: turnData } = await supabase
-        .from("games")
-        .select("current_turn")
-        .eq("game_id", gameData.game_id)
-        .single();
-
-      const { data: playerData } = await supabase
-        .from("players")
-        .select("turn_order")
-        .eq("user_id", gameData.your_id)
-        .single();
-      
-      console.log(playerData?.turn_order, turnData?.current_turn);
-
-      if (playerData?.turn_order === turnData?.current_turn || turnData?.current_turn === -1) {
-        setCurrentTurn(true);
-      } else {
-        setCurrentTurn(false);
-      }
-    };
-
-    fetchMessages();
-    checkTurn();
-
-    console.log(gameData?.status, gameData?.name);
-    return; //() => {};
-  }, [gameData]); // ✅ hooks can depend on state/props
+    return () => supabase.removeChannel(channel);
+  }, [gameData]);
 
   // Send message
   const sendMessage = async (e) => {
@@ -374,7 +346,6 @@ function Chat() {
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               placeholder="Type a message..."
-	      disabled={!currentTurn}
               style={{
                 flex: 1,
                 padding: '10px',
