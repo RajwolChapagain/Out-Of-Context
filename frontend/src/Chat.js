@@ -17,7 +17,7 @@ function Chat() {
   const [showVoting, setShowVoting] = useState(false); 
   const [meetingOpen, setMeetingOpen] = useState(false);
 
-  const [currentTurn, setCurrentTurn] = useState(false);
+  const [currentTurn, setCurrentTurn] = useState(true);
 
   // Join the server via Django
   const joinServer = async () => {
@@ -33,6 +33,7 @@ function Chat() {
 
   useEffect(() => {
     if (!gameData) return;
+	  console.log("GAME DATA CHANGED", gameData);
 
     const fetchMessages = async () => {
       const { data: messageData, error } = await supabase
@@ -66,17 +67,22 @@ function Chat() {
       
       console.log(playerData?.turn_order, turnData?.current_turn);
 
-      if (playerData?.turn_order === turnData?.current_turn || turnData?.current_turn === -1) {
-        setCurrentTurn(true);
+      if (playerData?.turn_order){
+	      if (playerData.turn_order === turnData.current_turn || turnData.current_turn === -1) {
+		      setCurrentTurn(true);
+	      } else {
+		      setCurrentTurn(false);
+	      }
       } else {
-        setCurrentTurn(false);
+	      console.log("Game has not started yet");
       }
     };
+
 
     fetchMessages();
     checkTurn();
 
-    console.log(gameData?.status, gameData?.name);
+    console.log(gameData.status, gameData.turn_order);
     return; //() => {};
   }, [gameData]); // ✅ hooks can depend on state/props
 
