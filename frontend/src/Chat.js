@@ -17,7 +17,8 @@ function Chat() {
   const [showVoting, setShowVoting] = useState(false); 
   const [meetingOpen, setMeetingOpen] = useState(false);
 
-  const [currentTurn, setCurrentTurn] = useState(true);
+  const [currentTurn, setCurrentTurn] = useState(false);
+  const [playerTurnOrder, setPlayerTurnOrder] = useState(null);
 
   // Join the server via Django
   const joinServer = async () => {
@@ -30,6 +31,33 @@ function Chat() {
   };
 
 
+	/*
+  // Real-time listener: fetch existing messages and subscribe to new ones
+  useEffect(() => {
+    if (!gameData) return;
+
+    const fetchExisting = async () => {
+      const { data } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('game_id', gameData.game_id)
+        .order('timestamp', { ascending: true });
+      if (data) setMessages(data);
+    };
+    fetchExisting();
+
+    const channel = supabase
+      .channel(`game-${gameData.game_id}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `game_id=eq.${gameData.game_id}` },
+        (payload) => setMessages((prev) => [...prev, payload.new])
+      )
+      .subscribe();
+
+    return () => supabase.removeChannel(channel);
+  }, [gameData]);
+///////////////////////////////////////////////////////////////////////*/
 
   useEffect(() => {
     if (!gameData) return;
@@ -42,6 +70,7 @@ function Chat() {
         .eq('game_id', gameData.game_id)
         .order('timestamp', { ascending: true });
 
+	    // error
       console.log("insert result", messageData, error);
       if (error) console.error("Fetch error:", error);
 
@@ -50,41 +79,74 @@ function Chat() {
       }
     };
 
-    const checkTurn = async () => {
-
-      console.log("Checking turn...");
-      const { data: turnData } = await supabase
-        .from("games")
-        .select("current_turn")
-        .eq("game_id", gameData.game_id)
-        .single();
-
-      const { data: playerData } = await supabase
-        .from("players")
-        .select("turn_order")
-        .eq("user_id", gameData.your_id)
-        .single();
-      
-      console.log(playerData?.turn_order, turnData?.current_turn);
-
-      if (playerData?.turn_order){
-	      if (playerData.turn_order === turnData.current_turn || turnData.current_turn === -1) {
-		      setCurrentTurn(true);
-	      } else {
-		      setCurrentTurn(false);
-	      }
-      } else {
-	      console.log("Game has not started yet");
-      }
-    };
-
-
     fetchMessages();
-    checkTurn();
 
-    console.log(gameData.status, gameData.turn_order);
-    return; //() => {};
-  }, [gameData]); // ✅ hooks can depend on state/props
+	  //checking turn
+	  const checkTurn = async () => {
+		  console.log("chekcing turn");
+		  const { data: turnData } = await supabase
+			  .from("games")
+			  .select("current_turn")
+			  .eq("game_id", gameData.game_id)
+			  .single();
+
+		  // add your turn to game data if don't have already
+		  if (playerTurnOrder === null) {
+			  const { data } = await supabase
+				  .from("players")
+				  .select("turn_order")
+				  .eq("user_id", gameData.your_id)
+				  .single();
+
+			  setPlayerTurnOrder(data?.turn_order);
+			  console.log("update player turn order?", playerTurnOrder, data?.turn_order);
+		  }
+
+		  //console.log(gameData?.yourTurn , turnData?.current_turn);
+		  console.log("test");
+		  if (playerTurnOrder != null){
+			  if (playerTurnOrder === gameData.current_turn || turnData.current_turn === -1) {
+				  setCurrentTurn(true);
+			  } else {
+				  setCurrentTurn(false);
+			  }
+		  } else {
+			  console.log("playerTurnOrder is Null :(");
+		  }
+	  };
+
+	  // one channel, two listeners
+	  const channel = supabase
+	  // message
+		  .channel(`game-${gameData.game_id}`)
+		  .on(
+			  'postgres_changes',
+			  { event: 'INSERT', schema: 'public', table: 'messages', filter: `game_id=eq.${gameData.game_id}` },
+			  (payload) => setMessages((prev) => [...prev, payload.new])
+		  )
+	  // turn
+		  .on(
+			  'postgres_changes',
+			  { event: 'UPDATE', schema: 'public', table: 'games', filter: `game_id=eq.${gameData.game_id}` },
+			  () => {
+				  checkTurn();
+			  }
+		  )
+	  	  .on(
+			  'postgres_changes',
+			  { event: 'INSERT', schema: 'public', table: 'games', filter: `game_id=eq.${gameData.game_id}` },
+			  () => {
+				  checkTurn();
+			  }
+		  )
+		  .subscribe();
+
+	  console.log(gameData.status, playerTurnOrder);
+	  return () => {
+		  supabase.removeChannel(channel);
+	  }
+
+  }, [gameData, playerTurnOrder]); 
 
   // Send message
   const sendMessage = async (e) => {

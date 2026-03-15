@@ -35,9 +35,15 @@ def join_game(request):
         "Imposter": False,
     }).execute()
 
+    #start game
     if game_started:
         assign_random_turn_order(game_id)
         assign_random_imposter(game_id)
+        supabase.table("games") \
+                .update({"current_turn": 0}) \
+                .eq("game_id", game_id) \
+                .execute()
+        print("GAME STARTED!")
         
     return JsonResponse({
         "game_id": game_id, 
