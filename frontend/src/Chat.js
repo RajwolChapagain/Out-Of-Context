@@ -331,7 +331,7 @@ function Chat() {
                 letterSpacing: '2px'
               }}
             >
-              {role === "Imposter" ? "???" : "APPLE"}
+              {gameStatus !== "active" ? "???" : role === "Imposter" ? "???" : "APPLE"}
             </div>
           </div>
 
