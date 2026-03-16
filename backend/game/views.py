@@ -5,6 +5,19 @@ from .supabase_client import supabase
 from django.views.decorators.csrf import csrf_exempt
 import json
 
+WORDS = [
+    "Apple",
+    "Triathalon",
+    "Castle",
+    "Pizza",
+    "Tiger",
+    "Rocket",
+    "Pyramid",
+    "Laptop",
+    "Volcano",
+    "Jungle"
+]
+
 
 def health(request):
     return JsonResponse({"status": "ok"})
@@ -42,11 +55,13 @@ def join_game(request):
 
         assign_random_turn_order(game_id)
         assign_random_imposter(game_id)
+        chosen_word = random.choice(WORDS)
 
         supabase.table("games").update({
             "status": "active",
             "current_turn": 0,
-            "current_round": 1
+            "current_round": 1,
+            "word": chosen_word
         }).eq("game_id", game_id).execute()
 
         game_started = True

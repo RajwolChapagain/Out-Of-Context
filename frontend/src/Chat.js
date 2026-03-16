@@ -20,7 +20,7 @@ function Chat() {
   const [gameStatus, setGameStatus] = useState('waiting');
   const [round, setRound] = useState(1);
   const [playerMap, setPlayerMap] = useState({});
-
+  const [word, setWord] = useState(null);
   const [meetingOpen, setMeetingOpen] = useState(false);
 
   const syncTurnData = async (gameId, userId, retryCount = 0) => {
@@ -103,8 +103,21 @@ function Chat() {
       }
     };
 
+    const fetchGameWord = async () => {
+      const { data } = await supabase
+        .from('games')
+        .select('word')
+        .eq('game_id', gameData.game_id)
+        .single();
+
+      if (data?.word) {
+        setWord(data.word);
+      }
+    };
+
     fetchExisting();
     fetchPlayers();
+    fetchGameWord();
 
     const channel = supabase
       .channel(`game-${gameData.game_id}`)
@@ -122,6 +135,9 @@ function Chat() {
         }, (payload) => {
           setGameStatus(payload.new.status);
           setCurrentTurn(payload.new.current_turn);
+          if (payload.new.word) {
+            setWord(payload.new.word);
+          }
           const currentRound = payload.new.current_round || 1;
           setRound(currentRound);
 
@@ -331,7 +347,7 @@ function Chat() {
                 letterSpacing: '2px'
               }}
             >
-              {gameStatus !== "active" ? "???" : role === "Imposter" ? "???" : "APPLE"}
+              {gameStatus !== "active" ? "???" : role === "Imposter" ? "???" : word || "Loading..."}
             </div>
           </div>
 
