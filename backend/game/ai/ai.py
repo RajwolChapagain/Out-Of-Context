@@ -5,11 +5,11 @@ from dotenv import load_dotenv
 from pydantic import BaseModel
 from pathlib import Path
 
-class AIResponse(BaseModel):
+class AIWordResponse(BaseModel):
     shared_word: str
     proxy_word: str
 
-def get_ai_response(conversation_history: str, is_imposter: bool, shared_word: str = '') -> str:
+def get_ai_proxy_word(conversation_history: str, is_imposter: bool, shared_word: str = '') -> str:
     load_dotenv()
 
     if not os.getenv('AI_GATEWAY_API_KEY'):
@@ -37,7 +37,7 @@ def get_ai_response(conversation_history: str, is_imposter: bool, shared_word: s
         instructions=instructions,
         input=conversation_history,
         max_output_tokens=16,
-        text_format=AIResponse,
+        text_format=AIWordResponse,
     )
 
     output_dict = json.loads(response.output_text)

@@ -3,7 +3,7 @@ import uuid
 from django.http import JsonResponse
 from .supabase_client import supabase
 from django.views.decorators.csrf import csrf_exempt
-from game.ai.ai import get_ai_response
+from game.ai.ai import get_ai_proxy_word
 import json
 
 WORDS = [
@@ -233,7 +233,7 @@ def post_ai_response(game_id: str, ai_id: str):
 
         shared_word = game_res.data["word"]
 
-    content = get_ai_response(conversation_history, is_imposter, shared_word)
+    content = get_ai_proxy_word(conversation_history, is_imposter, shared_word)
 
     supabase.table("messages").insert({
         "game_id": game_id,
