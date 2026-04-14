@@ -50,6 +50,11 @@ const sharedStyles = `
     50% { opacity: 0.8; transform: scale(1); }
     100% { opacity: 0; transform: scale(0); }
   }
+  @keyframes wordPop {
+    0% { opacity: 0; transform: scale(0.5); filter: blur(4px); }
+    60% { opacity: 1; transform: scale(1.1); filter: blur(0); }
+    100% { opacity: 1; transform: scale(1); filter: blur(0); }
+  }
   .float-to-space {
     animation: floatToSpace 2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
     position: fixed;
@@ -62,6 +67,9 @@ const sharedStyles = `
     background: white;
     border-radius: 50%;
     animation: starTrail 0.5s ease-out forwards;
+  }
+  .word-pop {
+    animation: wordPop 0.6s cubic-bezier(0.34, 1.2, 0.64, 1) 0.3s both;
   }
   .vote-card {
     transition: all 0.2s ease;
@@ -127,9 +135,9 @@ function Stars() {
   );
 }
 
-const VOTING_SECONDS = 15;
+const VOTING_SECONDS = 30;
 
-function Voting({ gameId, myId, onGameEnd, votingStartedAt }) {
+function Voting({ gameId, myId, onGameEnd, votingStartedAt, word }) {
   const [selectedVote, setSelectedVote]   = useState(null);
   const [timeLeft, setTimeLeft]           = useState(VOTING_SECONDS);
   const [hasVoted, setHasVoted]           = useState(false);
@@ -298,8 +306,27 @@ function Voting({ gameId, myId, onGameEnd, votingStartedAt }) {
             </h1>
             <div style={{ width: '120px', height: '2px', background: `linear-gradient(90deg, transparent, ${winner === 'crewmates' ? tok.green : tok.red}, transparent)`, margin: '24px auto', animation: 'fadeIn 0.5s ease 0.4s both' }} />
           </div>
+
+          {/* Simple Word Reveal - Pop Animation */}
+          <div style={{ textAlign: 'center', marginBottom: '32px', animation: 'fadeIn 0.5s ease 0.5s both' }}>
+            <div style={{ fontSize: '10px', letterSpacing: '3px', color: tok.textDim, marginBottom: '12px' }}>
+              THE SECRET WORD WAS
+            </div>
+            <div className="word-pop" style={{
+              fontSize: '52px',
+              fontWeight: '900',
+              letterSpacing: '4px',
+              color: tok.cyan,
+              textShadow: `0 0 30px ${tok.cyan}`,
+              opacity: 0,
+              transform: 'scale(0.5)',
+            }}>
+              {word?.toUpperCase() || '???'}
+            </div>
+          </div>
+
           {eliminatedPlayer && (
-            <div style={{ background: 'rgba(6,15,31,0.8)', border: `1px solid ${eliminatedPlayer.Imposter ? tok.red : tok.borderBright}`, borderRadius: '12px', padding: '24px', marginBottom: '32px', textAlign: 'center', animation: 'fadeIn 0.5s ease 0.6s both' }}>
+            <div style={{ background: 'rgba(6,15,31,0.8)', border: `1px solid ${eliminatedPlayer.Imposter ? tok.red : tok.borderBright}`, borderRadius: '12px', padding: '24px', marginBottom: '32px', textAlign: 'center', animation: 'fadeIn 0.5s ease 0.7s both' }}>
               <div style={{ fontSize: '14px', color: tok.textDim, marginBottom: '12px' }}>THE CREW VOTED TO EJECT</div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
                 <CrewmateIcon color={getPlayerColor(eliminatedPlayer.turn_order)} size={64} isImposter={eliminatedPlayer.Imposter} />
@@ -310,7 +337,7 @@ function Voting({ gameId, myId, onGameEnd, votingStartedAt }) {
               </div>
             </div>
           )}
-          <div style={{ marginBottom: '32px', animation: 'fadeIn 0.5s ease 0.8s both' }}>
+          <div style={{ marginBottom: '32px', animation: 'fadeIn 0.5s ease 0.9s both' }}>
             <div style={{ fontSize: '12px', letterSpacing: '3px', color: tok.textDim, textAlign: 'center', marginBottom: '16px' }}>FINAL VOTE COUNT</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {sortedResults.map((player, index) => {
