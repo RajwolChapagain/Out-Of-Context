@@ -243,7 +243,7 @@ export default function JoinScreen(props) {
           lineHeight: 1.1,
           textAlign: 'center',
         }}>
-          THEORY
+          OUT OF
           <br />
           <span style={{
             fontSize: '0.55em',
@@ -251,7 +251,7 @@ export default function JoinScreen(props) {
             color: 'rgba(148,210,255,0.8)',
             textShadow: '0 0 20px rgba(148,210,255,0.4)',
           }}>
-            OF MIND
+            CONTEXT
           </span>
         </h1>
 

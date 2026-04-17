@@ -23,6 +23,7 @@ const tok = {
   blue: '#2563eb',
   red: '#ef4444',
   green: '#22c55e',
+  yellow: '#f59e0b',
   font: '"Courier New", Courier, monospace',
 };
 
@@ -46,6 +47,33 @@ const sharedStyles = `
   ::-webkit-scrollbar{width:4px}
   ::-webkit-scrollbar-track{background:transparent}
   ::-webkit-scrollbar-thumb{background:rgba(148,210,255,.15);border-radius:2px}
+  
+  /* Trust Meter Slider Styles */
+  .suspicion-slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: height 0.1s ease;
+  }
+  .suspicion-slider:hover {
+    height: 6px;
+  }
+  .suspicion-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: ${tok.cyan};
+    border: 2px solid white;
+    cursor: pointer;
+    box-shadow: 0 0 6px ${tok.cyan};
+    transition: transform 0.1s ease;
+  }
+  .suspicion-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+  }
 `;
 
 /* ── Shared sub-components ── */
@@ -196,7 +224,7 @@ function RulesModal({ onClose }) {
 
         <div style={{ padding: '24px 28px', borderBottom: `1px solid ${tok.border}`, background: 'rgba(3,10,22,0.8)', paddingRight: '60px' }}>
           <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '900', letterSpacing: '4px', color: tok.cyan, textTransform: 'uppercase' }}>GAME RULES</h2>
-          <div style={{ fontSize: '10px', letterSpacing: '3px', color: tok.textDim, marginTop: '8px' }}>THEORY OF MIND · SOCIAL DEDUCTION</div>
+          <div style={{ fontSize: '10px', letterSpacing: '3px', color: tok.textDim, marginTop: '8px' }}>OUT OF CONTEXT · SOCIAL DEDUCTION</div>
         </div>
 
         <div style={{ padding: '28px', overflowY: 'auto', maxHeight: 'calc(80vh - 140px)' }}>
@@ -262,7 +290,7 @@ function LobbyScreen({ gameData, playerCount }) {
       <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', animation: 'fadeIn .5s ease' }}>
         <div style={{ fontSize: '10px', letterSpacing: '6px', color: tok.cyanDim, marginBottom: '4px' }}>A SOCIAL DEDUCTION GAME</div>
         <h1 style={{ margin: 0, fontSize: 'clamp(28px,4vw,52px)', fontWeight: '900', letterSpacing: '4px', color: 'white', textShadow: '0 0 40px rgba(37,99,235,.5)', textAlign: 'center', lineHeight: 1.1 }}>
-          THEORY<br /><span style={{ fontSize: '0.55em', letterSpacing: '12px', color: tok.cyanDim }}>OF MIND</span>
+          OUT OF<br /><span style={{ fontSize: '0.55em', letterSpacing: '12px', color: tok.cyanDim }}>CONTEXT</span>
         </h1>
         <div style={{ width: '80px', height: '1px', background: 'linear-gradient(90deg,transparent,rgba(148,210,255,.3),transparent)', margin: '12px 0' }} />
         <div style={{ background: 'rgba(6,15,31,.8)', border: `1px solid ${tok.borderBright}`, borderRadius: '6px', padding: '28px 36px', textAlign: 'center', minWidth: '320px', boxShadow: '0 0 40px rgba(37,99,235,.08)' }}>
@@ -315,6 +343,9 @@ function Chat() {
   const [lobbyPlayerCount, setLobbyPlayerCount]     = useState(0);
   const [showRules, setShowRules]                   = useState(false);
   const [discussionStartMsgCount, setDiscussionStartMsgCount] = useState(null);
+  
+  // Trust Meter / Suspicion Slider State
+  const [suspicionValues, setSuspicionValues] = useState({});
 
   // ── Server-driven timers ──
   const [discussionStartedAt, setDiscussionStartedAt] = useState(null);
@@ -550,6 +581,19 @@ function Chat() {
   const isMyTurn      = gameStatus === 'active' && myTurnID === currentTurn;
   const inputDisabled = gameStatus !== 'active' || !isMyTurn;
 
+  // Helper functions for Trust Meter
+  const getSuspicionColor = (level) => {
+    if (level < 30) return tok.green;
+    if (level < 70) return tok.yellow;
+    return tok.red;
+  };
+
+  const getSuspicionEmoji = (level) => {
+    if (level < 30) return '😇';
+    if (level < 70) return '😐';
+    return '😈';
+  };
+
   /* ── Screen routing ── */
   if (!gameData) return <JoinScreen onJoin={joinServer} loading={joining} />;
 
@@ -562,6 +606,7 @@ function Chat() {
       myId={gameData.your_id}
       onGameEnd={() => {}}
       votingStartedAt={votingStartedAt}
+      word={word}
     />;
 
   /* ── Discussion phase ── */
@@ -649,8 +694,8 @@ function Chat() {
       {/* Top bar */}
       <div style={{ padding: '12px 24px', borderBottom: `1px solid ${tok.border}`, display: 'flex', alignItems: 'center', gap: '14px', background: 'rgba(6,15,31,.85)', backdropFilter: 'blur(8px)', position: 'relative', zIndex: 2, flexShrink: 0 }}>
         <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
-          <span style={{ fontSize: '15px', fontWeight: '900', letterSpacing: '4px', color: 'white', textShadow: '0 0 20px rgba(37,99,235,.6)' }}>THEORY</span>
-          <span style={{ fontSize: '9px', letterSpacing: '6px', color: tok.cyanDim }}>OF MIND</span>
+          <span style={{ fontSize: '15px', fontWeight: '900', letterSpacing: '4px', color: 'white', textShadow: '0 0 20px rgba(37,99,235,.6)' }}>OUT OF</span>
+          <span style={{ fontSize: '9px', letterSpacing: '6px', color: tok.cyanDim }}>CONTEXT</span>
         </div>
         <div style={{ width: '1px', height: '32px', background: tok.border, margin: '0 8px' }} />
         <span style={{ fontSize: '11px', letterSpacing: '3px', color: tok.textDim }}>ROUND {round} OF 2</span>
@@ -682,6 +727,148 @@ function Chat() {
           <div style={{ background: isMyTurn ? 'rgba(34,197,94,.1)' : 'rgba(6,15,31,.6)', border: `1px solid ${isMyTurn ? 'rgba(34,197,94,.4)' : tok.border}`, borderRadius: '4px', padding: '10px 14px', textAlign: 'center', fontSize: '11px', letterSpacing: '3px', color: isMyTurn ? tok.green : tok.textDim, fontWeight: '700', textShadow: isMyTurn ? '0 0 12px rgba(34,197,94,.4)' : 'none' }}>
             {isMyTurn ? '▶ YOUR TURN' : `PLAYER ${currentTurn + 1}'S TURN`}
           </div>
+
+          {/* ────────────────────────────────────────────── */}
+          {/* TRUST METER / SUSPICION SLIDER - NEW FEATURE */}
+          {/* ────────────────────────────────────────────── */}
+          <div style={{
+            background: 'rgba(6,15,31,0.6)',
+            border: `1px solid ${tok.border}`,
+            borderRadius: '8px',
+            padding: '12px',
+            marginTop: '8px',
+          }}>
+            <div style={{ 
+              fontSize: '9px', 
+              letterSpacing: '2px', 
+              color: tok.textDim, 
+              textAlign: 'center',
+              marginBottom: '10px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px'
+            }}>
+              <span>🔍</span>
+              <span>SUSPICION METER</span>
+              <span>⚡</span>
+            </div>
+            
+            {Object.entries(playerMap)
+              .filter(([playerId]) => playerId !== gameData?.your_id)
+              .map(([playerId, turnOrder]) => {
+                const storageKey = `suspicion_${gameData?.game_id}_${playerId}`;
+                const currentValue = suspicionValues[storageKey] !== undefined 
+                  ? suspicionValues[storageKey] 
+                  : (parseInt(localStorage.getItem(storageKey)) || 50);
+                
+                return (
+                  <div key={playerId} style={{ marginBottom: '12px' }}>
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                      marginBottom: '4px'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <CrewmateIcon 
+                          color={PLAYER_COLORS[turnOrder % PLAYER_COLORS.length]} 
+                          size={16} 
+                        />
+                        <span style={{ 
+                          fontSize: '11px', 
+                          fontWeight: '600',
+                          color: tok.text
+                        }}>
+                          PLAYER {turnOrder + 1}
+                        </span>
+                      </div>
+                      <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '4px',
+                        fontSize: '11px',
+                        color: getSuspicionColor(currentValue),
+                        fontWeight: '700'
+                      }}>
+                        <span>{getSuspicionEmoji(currentValue)}</span>
+                        <span>{currentValue}%</span>
+                      </div>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="1"
+                      value={currentValue}
+                      className="suspicion-slider"
+                      style={{
+                        background: `linear-gradient(90deg, ${tok.green} 0%, ${tok.yellow} 50%, ${tok.red} 100%)`,
+                      }}
+                      onChange={(e) => {
+                        const newValue = parseInt(e.target.value);
+                        const newStorageKey = `suspicion_${gameData?.game_id}_${playerId}`;
+                        setSuspicionValues(prev => ({ ...prev, [newStorageKey]: newValue }));
+                        localStorage.setItem(newStorageKey, newValue);
+                      }}
+                    />
+                  </div>
+                );
+              })}
+            
+            {/* Reset button */}
+            <button
+              onClick={() => {
+                Object.keys(playerMap)
+                  .filter(id => id !== gameData?.your_id)
+                  .forEach(id => {
+                    const key = `suspicion_${gameData?.game_id}_${id}`;
+                    localStorage.removeItem(key);
+                    setSuspicionValues(prev => {
+                      const newState = { ...prev };
+                      delete newState[key];
+                      return newState;
+                    });
+                  });
+              }}
+              style={{
+                width: '100%',
+                marginTop: '8px',
+                padding: '6px',
+                background: 'rgba(239,68,68,0.1)',
+                border: `1px solid ${tok.border}`,
+                borderRadius: '4px',
+                color: tok.textDim,
+                fontSize: '8px',
+                letterSpacing: '1px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                fontFamily: tok.font,
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = 'rgba(239,68,68,0.2)';
+                e.target.style.color = tok.red;
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'rgba(239,68,68,0.1)';
+                e.target.style.color = tok.textDim;
+              }}
+            >
+              🔄 RESET ALL SUSPICIONS
+            </button>
+            
+            <div style={{
+              fontSize: '7px',
+              color: tok.textDim,
+              textAlign: 'center',
+              marginTop: '8px',
+              letterSpacing: '1px'
+            }}>
+              Your suspicions are private • Saved locally
+            </div>
+          </div>
+
+          {/* Rules Button */}
           <button
             onClick={() => setShowRules(true)}
             className="rules-btn"

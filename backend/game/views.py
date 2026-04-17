@@ -14,16 +14,24 @@ AI_COOLDOWN_SECONDS = 5
 AI_FOLLOWUP_WINDOW = (15, 35)  # AI doubles down between 15-35s after its last message
 
 WORDS = [
-    "Apple",
-    "Triathalon",
-    "Castle",
-    "Pizza",
-    "Tiger",
-    "Rocket",
-    "Pyramid",
-    "Laptop",
-    "Volcano",
-    "Jungle"
+    "Apple", "Triathalon", "Castle", "Pizza", "Tiger",
+    "Rocket", "Pyramid", "Laptop", "Volcano", "Jungle",
+    
+    # Food & Drink 
+    "Coffee", "Sushi", "Burrito", "Pancake", "Bacon",
+    "Croissant", "Popcorn", "Smoothie", "Nachos", "Bagel",
+    
+    # Animals 
+    "Penguin", "Giraffe", "Zebra", "Kangaroo", "Octopus",
+    "Flamingo", "Raccoon", "Scorpion", "Dolphin", "Eagle",
+    
+    # Places & Objects 
+    "Lighthouse", "Carnival", "Submarine", "Skyscraper", "Telescope",
+    "Compass", "Hammock", "Igloo", "Oasis", "Volcano",
+    
+    # Abstract / Fun 
+    "Echo", "Mirage", "Chimera", "Phantom", "Riddle",
+    "Secret", "Shadow", "Whisper", "Enigma", "Phantom"
 ]
 
 
