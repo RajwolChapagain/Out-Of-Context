@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 from pydantic import BaseModel
 from pathlib import Path
 
+MODEL = 'gpt-5.4'
+
 class AIWordResponse(BaseModel):
     shared_word: str
     proxy_word: str
@@ -39,10 +41,10 @@ def get_ai_proxy_word(conversation_history: str, is_imposter: bool, shared_word:
             instructions += f'Shared word: {shared_word}'
 
     response = client.responses.parse(
-        model="gpt-5.4",
+        model=MODEL,
         instructions=instructions,
         input=conversation_history,
-        max_output_tokens=16,
+        max_output_tokens=50,
         text_format=AIWordResponse,
     )
 
@@ -74,10 +76,10 @@ def get_ai_discussion_message(
     instructions += f'\nYou are: {ai_player_name}. Do not accuse yourself.'
 
     response = client.responses.parse(
-        model="gpt-5.4",
+        model=MODEL,
         instructions=instructions,
         input=conversation_history,
-        max_output_tokens=50,  # ~150 chars
+        max_output_tokens=50,
         text_format=AIDiscussionResponse,
     )
     output_dict = json.loads(response.output_text)
@@ -104,10 +106,10 @@ def get_ai_vote(
     instructions += f'\nCandidates you may vote for (player numbers): {", ".join(str(c) for c in candidates)}'
 
     response = client.responses.parse(
-        model="gpt-5.4",
+        model=MODEL,
         instructions=instructions,
         input=conversation_history,
-        max_output_tokens=16,
+        max_output_tokens=50,
         text_format=AIVoteResponse,
     )
     output_dict = json.loads(response.output_text)
