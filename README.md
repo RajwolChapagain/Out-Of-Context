@@ -53,6 +53,14 @@ The voting phase securely resolves the winner through a synchronized process:
 * Node.js and npm
 * Supabase Account / API Keys
 * AI Gateway API Key
+  
+### Compile and Run
+* Navigate to backend: 
+`docker compose up`
+* Navigate to frontend and install dependencies:
+`npm install`
+* Run the application:
+`npm start`
 
-### Backend Setup
-The backend is containerized for easy deployment.
+### Link
+outofcontext.vercel.app
