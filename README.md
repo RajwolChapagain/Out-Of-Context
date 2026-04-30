@@ -23,6 +23,13 @@ Developed by Ziyan, Anand, Meera, Rajwol, and Wai.
 
 ## Algorithm Design
 
+### Basic Gameplay Algorithm
+The core gameplay loop is synchronized across all clients using a state-machine approach driven by the backend:
+1. **Initialization:** Upon 5 players joining the lobby, the game transitions to an "active" state. Roles (4 Crewmates, 1 Imposter) are assigned, a shared secret word is selected (hidden from the Imposter), and a randomized turn order is generated.
+2. **Turn-Based Hinting (Rounds 1 & 2):** Players sequentially submit one-word proxy hints. The Django backend uses modulo arithmetic `(current_turn + 1) % 5` to calculate the next turn, automatically incrementing the round once the turn resets to 0.
+3. **Open Discussion (Round 3):** After two full rounds of hinting, the strict turn order is removed, and players enter a 60-second free-chat phase to discuss suspicions.
+4. **Voting Phase:** Once the discussion timer expires, the game shifts to a 30-second voting phase where players lock in their suspect.
+
 ### AI Action Algorithm
 The autonomous AI bot dynamically reacts to human players using a multi-step workflow:
 1. **Context Gathering:** The Django backend retrieves the current chat history, the AI's assigned role (Crewmate or Imposter), and the secret word from the Supabase database.
