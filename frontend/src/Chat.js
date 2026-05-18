@@ -356,15 +356,31 @@ function Chat() {
 
   const msgRef  = useRef(null);
   const discRef = useRef(null);
+  const endDiscussionRequested = useRef(false);
 
   const goToVoting = useCallback(() => {
     setShowDiscussion(false);
     setShowVoting(true);
   }, []);
 
+  const requestEndDiscussion = useCallback(() => {
+    if (!gameData?.game_id || endDiscussionRequested.current) return;
+    endDiscussionRequested.current = true;
+    axios.post(`${process.env.REACT_APP_API_URL}/end_discussion`, {
+      game_id: gameData.game_id
+    }).catch((err) => {
+      endDiscussionRequested.current = false;
+      console.error(err);
+    });
+  }, [gameData]);
+
+  useEffect(() => {
+    if (showDiscussion) endDiscussionRequested.current = false;
+  }, [showDiscussion]);
+
   // ── Server-derived discussion timer ──
   useEffect(() => {
-    if (!showDiscussion || !discussionStartedAt) return;
+    if (!showDiscussion || !discussionStartedAt || !gameData) return;
 
     const tick = () => {
       const elapsed   = (Date.now() - new Date(discussionStartedAt).getTime()) / 1000;
@@ -373,21 +389,40 @@ function Chat() {
       return remaining;
     };
 
-    // Don't start interval if already expired
-    if (tick() <= 0) return;
+    const remaining = tick();
+    if (remaining <= 0) {
+      requestEndDiscussion();
+      return;
+    }
 
     const interval = setInterval(() => {
-      const remaining = tick();
-      if (remaining <= 0) {
+      const left = tick();
+      if (left <= 0) {
         clearInterval(interval);
-        axios.post(`${process.env.REACT_APP_API_URL}/end_discussion`, {
-          game_id: gameData.game_id
-        }).catch(console.error);
+        requestEndDiscussion();
       }
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [showDiscussion, discussionStartedAt, gameData]);
+  }, [showDiscussion, discussionStartedAt, gameData, requestEndDiscussion]);
+
+  // If discussion UI is shown before timestamp arrives, poll server once it exists
+  useEffect(() => {
+    if (!showDiscussion || discussionStartedAt || !gameData) return;
+
+    const syncDiscussionStart = async () => {
+      const { data } = await supabase.from('games')
+        .select('discussion_started_at, status')
+        .eq('game_id', gameData.game_id)
+        .single();
+      if (data?.discussion_started_at) setDiscussionStartedAt(data.discussion_started_at);
+      if (data?.status === 'voting') goToVoting();
+    };
+
+    syncDiscussionStart();
+    const poll = setInterval(syncDiscussionStart, 2000);
+    return () => clearInterval(poll);
+  }, [showDiscussion, discussionStartedAt, gameData, goToVoting]);
 
   const urgent = timeLeft <= 10;
 
@@ -475,11 +510,18 @@ function Chat() {
     // Fetch server timestamps in case player joined mid-discussion or mid-voting
     const fetchTimestamps = async () => {
       const { data } = await supabase.from('games')
-        .select('discussion_started_at, voting_started_at, status')
+        .select('discussion_started_at, voting_started_at, status, current_round')
         .eq('game_id', gameData.game_id).single();
       if (data?.discussion_started_at) setDiscussionStartedAt(data.discussion_started_at);
       if (data?.voting_started_at)     setVotingStartedAt(data.voting_started_at);
       if (data?.status === 'voting')   goToVoting();
+      if ((data?.current_round || 1) > 2 && data?.status === 'active') {
+        setMessages(prev => {
+          setDiscussionStartMsgCount(prev.length);
+          return prev;
+        });
+        setShowDiscussion(true);
+      }
     };
 
     fetchExisting();

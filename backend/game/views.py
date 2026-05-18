@@ -142,10 +142,6 @@ def send_message(request):
         if next_turn == 0:
             current_round += 1
             
-        if current_round == 3 and prev_round == 2:
-            supabase.table("games").update({
-                "discussion_started_at": timezone.now().isoformat()
-            }).eq("game_id", game_id).execute()
         # ── Discussion phase AI logic ──────────────────────────────────────────
         if current_round >= 3:
             ai_res = supabase.table("players") \
@@ -230,6 +226,10 @@ def send_message(request):
                 if next_turn == 0:
                     current_round += 1
 
+        # Round can reach 3 inside AI turn logic above — ensure discussion timestamp exists
+        if current_round >= 3:
+            _ensure_discussion_started(game_id)
+
         supabase.table("games").update({
             "current_turn":  next_turn,
             "current_round": current_round
@@ -240,6 +240,19 @@ def send_message(request):
             "next_turn":     next_turn,
             "current_round": current_round
         })
+
+def _ensure_discussion_started(game_id: str) -> None:
+    game = supabase.table("games") \
+        .select("discussion_started_at") \
+        .eq("game_id", game_id) \
+        .single() \
+        .execute()
+
+    if game.data and not game.data.get("discussion_started_at"):
+        supabase.table("games").update({
+            "discussion_started_at": timezone.now().isoformat()
+        }).eq("game_id", game_id).execute()
+
 
 def assign_random_turn_order(game_id: str) -> None:
 
